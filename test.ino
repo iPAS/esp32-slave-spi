@@ -1,8 +1,7 @@
 /**
- * SlaveSPI Class from
- * - [shaielc/SlaveSPIClass.cpp](https://gist.github.com/shaielc/e0937d68978b03b2544474b641328145)
+ * SlaveSPI Class from https://github.com/iPAS/esp32-slave-spi
  */
-#include "SlaveSPIClass.h"
+#include "SlaveSPI.h"
 
 #include <SPI.h>
 

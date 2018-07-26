@@ -8,10 +8,8 @@
 #define SPI_MODE 0
 #define SPI_DMA 0  // XXX: Still fail of use DMA whether 1 or 2 
 
-#define SPI_MALLOC_CAP (MALLOC_CAP_DMA | MALLOC_CAP_32BIT)
-    
-void setupIntr(spi_slave_transaction_t * trans);
-void transIntr(spi_slave_transaction_t * trans);
+// #define SPI_MALLOC_CAP (MALLOC_CAP_DMA | MALLOC_CAP_32BIT)
+#define SPI_MALLOC_CAP (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT)
 
 class SlaveSPI {
 
@@ -27,6 +25,9 @@ class SlaveSPI {
     size_t t_size;      // length of transaction buffer, (should be set to maximum transition size)
 
     spi_host_device_t spi_host;  // HSPI, VSPI 
+
+    byte *txBuffer;
+    byte *rxBuffer;
 
     spi_slave_transaction_t * driver;
     void (*exter_intr)();  // interrupt at the end of transmission ,
