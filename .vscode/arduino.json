@@ -1,0 +1,7 @@
+{
+    "board": "espressif:esp32:heltec_wifi_lora_32",
+    "configuration": "FlashFreq=80,UploadSpeed=921600",
+    "port": "/dev/ttyUSB0",
+    "sketch": "test.ino",
+    "output": "../tmp/esp32-slave-spi"
+}
