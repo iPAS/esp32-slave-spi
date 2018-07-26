@@ -37,21 +37,21 @@ class SlaveSPI {
     static int callbackDummy() { return 0; }
 
   public:
-    SlaveSPI(spi_host_device_t spi_host=HSPI_HOST);  // HSPI, VSPI
+    SlaveSPI(spi_host_device_t spi_host = HSPI_HOST);  // HSPI, VSPI
+    void initTransmissionQueue();
 
     void callbackAfterQueueing(spi_slave_transaction_t * trans);      // Called when the trans is set in the queue
     void callbackAfterTransmission(spi_slave_transaction_t * trans);  // Called when the trans has finished
 
-    inline bool match(spi_slave_transaction_t * trans);
-    void initTransmissionQueue();
+    inline bool match(spi_slave_transaction_t * trans) { return (this->transaction == trans); };
 
     void begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
                size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
 
     void write(String & msg);  // Queue data then wait for transmission
-    byte read();
-
-    inline char *   operator[](int i) { return &input_stream[i]; }
+    String read();
+    byte readByte();
+    
     inline String * getInputStream() { return &input_stream; }
     inline void     flushInputStream() { input_stream = ""; }
 };

@@ -13,10 +13,6 @@ void call_matcher_after_transmission(spi_slave_transaction_t * trans) {  // Call
         if (SlaveSPI::SlaveSPIVector[i]->match(trans)) SlaveSPI::SlaveSPIVector[i]->callbackAfterTransmission(trans);
 }
 
-inline bool SlaveSPI::match(spi_slave_transaction_t * trans) {
-    return (this->transaction == trans);
-}
-
 SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
     this->spi_host = spi_host;
 
@@ -135,8 +131,14 @@ void SlaveSPI::write(String & msg) {  // used to queue data to transmit
     }
 }
 
-byte SlaveSPI::read() {
-    byte temp = input_stream[0];
+String SlaveSPI::read() {
+    String tmp = input_stream;
+    input_stream = "";
+    return tmp;
+}
+
+byte SlaveSPI::readByte() {
+    byte tmp = input_stream[0];
     input_stream.remove(0, 1);
-    return temp;
+    return tmp;
 }
