@@ -16,13 +16,13 @@
 #define SCLK (gpio_num_t)27
 #define SS   (gpio_num_t)34
 
-SPIClass master(VSPI);
-SPISettings spi_setting(100000, MSBFIRST, SPI_MODE);
+SPIClass master(VSPI);  // HSPI
+SPISettings spi_setting(1000000, MSBFIRST, SPI_MODE);
 
-SlaveSPI slave(HSPI_HOST);
+SlaveSPI slave(HSPI_HOST);  // VSPI_HOST
 
-static String slave_msg = "";
 static String master_msg = "";
+static String slave_msg = "";
 
 int callback_after_slave_tx_finish() {
     // Serial.println("[slave_tx_finish] slave transmission has been finished!");
@@ -46,17 +46,16 @@ void setup() {
 
     pinMode(MS, OUTPUT);
     digitalWrite(MS, HIGH);
-    // slave.begin(SO, SI, SCLK, SS, 8, slave_tx_finish);  // seems to work with groups of 4 bytes
-    // slave.begin(SO, SI, SCLK, SS, 4, slave_tx_finish);
+    // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
+    // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
     slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
-    // slave.begin(SO, SI, SCLK, SS, 1, slave_tx_finish);  // at least 2 word in an SPI frame
+    // slave.begin(SO, SI, SCLK, SS, 1, callback_after_slave_tx_finish);  // at least 2 word in an SPI frame
 }
 
 void loop() {
     if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
-        while (slave.getInputStream()->length()) { 
+        while (slave.getInputStream()->length()) 
             slave_msg += slave.read();
-        }
         Serial.print("slave input: ");
         printHex(slave_msg);
     }
@@ -65,7 +64,7 @@ void loop() {
         master_msg += (char)Serial.read();
     }
 
-    while (slave_msg.length() > 0) {  // Slave SPI output
+    while (slave_msg.length() > 0) {  // Echo it back. Slave SPI output
         slave.write(slave_msg);
         Serial.print("slave output: ");
         printHex(slave_msg);
@@ -73,19 +72,19 @@ void loop() {
     }
 
     while (master_msg.length() > 0) {  // From serial to Master SPI
-        Serial.print("serial input / master output: ");
+        Serial.print("master output (serial-in): ");
         Serial.println(master_msg);
 
-        Serial.print("master input (whether read or write mode): ");
-        
         digitalWrite(MS, LOW);
         master.beginTransaction(spi_setting);
         for (int i = 0; i < master_msg.length(); i++) {
-            master_msg[i] = master.transfer(master_msg[i]);  // ERROR : gives the transmitted data <<1
-        }
+            master_msg[i] = master.transfer(master_msg[i]);  // Return received data
+            // master.transfer16(master_msg[i]);
+        }  
         master.endTransaction();
         digitalWrite(MS, HIGH);
-        
+
+        Serial.print("master input: ");
         printHex(master_msg);
         master_msg = "";
     }

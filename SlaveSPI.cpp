@@ -13,6 +13,9 @@ void call_matcher_after_transmission(spi_slave_transaction_t * trans) {  // Call
         if (SlaveSPI::SlaveSPIVector[i]->match(trans)) SlaveSPI::SlaveSPIVector[i]->callbackAfterTransmission(trans);
 }
 
+/**
+ * Constructor 
+ */
 SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
     this->spi_host = spi_host;
 
@@ -28,6 +31,9 @@ SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
     output_stream = "";
 }
 
+/**
+ * To initialize the Slave-SPI module.
+ */ 
 void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss, size_t buffer_size, int (*callback)()) {
     callback_after_transmission = callback;
 
@@ -82,53 +88,60 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
     In case the transmission length is shorter than the buffer length, only data up to the length of the buffer will be exchanged.
     */
     transaction = new spi_slave_transaction_t{
-        .length    = max_buffer_size * 8,  //< Total data length, in bits -- maximum receivable
-        .trans_len = 0,                    //< Transaction data length, in bits -- actual received
-        .tx_buffer = tx_buffer,            //< tx buffer, or NULL for no MOSI phase
-        .rx_buffer = rx_buffer,            //< rx buffer, or NULL for no MISO phase
-        .user      = NULL                  //< User-defined variable. Can be used to store e.g. transaction ID.
+        .length    = max_buffer_size << 3,  //< Total data length, in bits (x8) -- maximum receivable
+        .trans_len = 0,                     //< Transaction data length, in bits -- actual received
+        .tx_buffer = tx_buffer,             //< tx buffer, or NULL for no MOSI phase
+        .rx_buffer = rx_buffer,             //< rx buffer, or NULL for no MISO phase
+        .user      = NULL                   //< User-defined variable. Can be used to store e.g. transaction ID.
     };
-
+    
     initTransmissionQueue();
 }
 
-void SlaveSPI::callbackAfterQueueing(spi_slave_transaction_t * trans) {  // called when the trans is set in the queue
+/**
+ * Be called when the trans is set in the queue.
+ */
+void SlaveSPI::callbackAfterQueueing(spi_slave_transaction_t * trans) {  
     // TODO: data ready -- trig hand-check pin
 }
 
-void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {  // called when the trans has finished
-    for (int i = 0; i < max_buffer_size; i++) {
-        input_stream += ((char *)transaction->rx_buffer)[i];  // Aggregate
-        ((char *)transaction->rx_buffer)[i] = (char)0;        // Clean
+/**
+ * Be called when the trans has finished. 
+ */
+void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {
+    // Aggregate in-comming to input_stream
+    for (int i = 0; i < (transaction->trans_len >> 3); i++) {  // Copy by actual received. Div by 8, to byte
+        input_stream += ((char *)transaction->rx_buffer)[i];   // Aggregate
+        ((char *)transaction->rx_buffer)[i] = 0;               // Clean
     }
-    initTransmissionQueue();  // Re-initialize
-
-    int ret = callback_after_transmission();
-}
-
-void SlaveSPI::initTransmissionQueue() {
-    // Prepare out-going data for next master request
-    int i = 0;
-    for (; i < max_buffer_size && i < output_stream.length(); i++) {  // NOT over buffer size
-        ((char *)transaction->tx_buffer)[i] = output_stream[i];       // Copy prepared data to out-going queue
-    }
-    output_stream = &(output_stream[i]);  // Segmentation. The remain is left for future.
 
     // Setup for receiving buffer. Prepare for next transaction
-    transaction->length    = max_buffer_size * 8;
     transaction->trans_len = 0;     // Set zero on slave's actual received data.
     transaction->user      = NULL;  // XXX: reset?
 
-    if (esp_err_t err = spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY)) {  // Queue. Ready for sending if receiving
+    initTransmissionQueue();  // Prepare the out-going queue and initialize the transmission configuration
+
+    int ret = callback_after_transmission();  // Callback to user function hook
+}
+
+void SlaveSPI::initTransmissionQueue() {
+    // Prepare out-going data for next request by the master
+    int size = min(max_buffer_size, output_stream.length());              // NOT over the buffer's size
+    memcpy((void *)transaction->tx_buffer, output_stream.c_str(), size);  // Rearrange the tx data
+    output_stream.remove(0, size);                                        // Segmentation. Remain for future.
+
+    // Queue. Ready for sending if receiving
+    if (esp_err_t err = spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY)) {
         Serial.print(F("[SlaveSPI::begin] spi_slave_queue_trans err: "));
         Serial.println(err);
     }
 }
 
+/**
+ * To read/write SPI queue data.
+ */ 
 void SlaveSPI::write(String & msg) {  // used to queue data to transmit
-    for (int i = 0; i < msg.length(); i++) {
-        output_stream += msg[i];
-    }
+    output_stream += msg;
 }
 
 String SlaveSPI::read() {
