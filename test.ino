@@ -4,6 +4,24 @@
  */
 #include "SlaveSPI.h"
 
+// ----------------------------------------------------------------------------
+/**
+ * XXX: quick_fix_spi_timing:
+ * 
+ * The recceived data from MISO are shifted by one bit in every byte. 
+ * Helped by https://github.com/espressif/arduino-esp32/issues/1427
+ */
+#include <soc/spi_struct.h>
+struct spi_struct_t {
+    spi_dev_t * dev;
+#if !CONFIG_DISABLE_HAL_LOCKS
+    xSemaphoreHandle lock;
+#endif
+    uint8_t num;
+};
+void quick_fix_spi_timing(spi_t * _spi) { _spi->dev->ctrl2.miso_delay_mode = 2; }
+// ----------------------------------------------------------------------------
+
 #include <SPI.h>
 
 #define MO   22
@@ -31,6 +49,9 @@ int callback_after_slave_tx_finish() {
     return 0;
 }
 
+/**
+ * Auxiliary
+ */ 
 void printHex(String str) {
     for (int i = 0; i < str.length(); i++) {
         Serial.print(str[i], HEX);
@@ -43,6 +64,9 @@ void printlnHex(String str) {
     Serial.println();
 }
 
+/**
+ * Setup
+ */
 void setup() {
     Serial.begin(115200);
     
@@ -53,12 +77,17 @@ void setup() {
     digitalWrite(MCLK, LOW);  // Due to SPI_MODE0
     master.begin(MCLK, MI, MO);
     
+    quick_fix_spi_timing(master.bus());  // XXX: https://github.com/espressif/arduino-esp32/issues/1427
+
     // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
     // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
     slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
     // slave.begin(SO, SI, SCLK, SS, 1, callback_after_slave_tx_finish);  // at least 2 word in an SPI frame
 }
 
+/**
+ * Loop 
+ */
 void loop() {
     if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
         while (slave.getInputStream()->length()) {
