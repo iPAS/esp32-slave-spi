@@ -4,14 +4,16 @@
 #include "Arduino.h"
 #include "driver/spi_slave.h"
 
+// #define GPIO_HANDSHAKE 
+
 #define SPI_QUEUE_SIZE 1
-#define SPI_MODE 0
-#define SPI_DMA 0  // XXX: Still fail of use DMA whether 1 or 2 
+#define SPI_MODE       0
+#define SPI_DMA        0  // XXX: Still fail of use DMA whether 1 or 2. Don't know why. 
 
 #define SPI_DEFAULT_MAX_BUFFER_SIZE 128
 
-// #define SPI_MALLOC_CAP (MALLOC_CAP_DMA | MALLOC_CAP_32BIT)
-#define SPI_MALLOC_CAP (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT)
+#define SPI_MALLOC_CAP (MALLOC_CAP_DMA | MALLOC_CAP_32BIT)
+// #define SPI_MALLOC_CAP (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT)
 
 class SlaveSPI {
 

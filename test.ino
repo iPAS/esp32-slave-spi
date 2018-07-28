@@ -36,6 +36,10 @@ void printHex(String str) {
         Serial.print(str[i], HEX);
         Serial.print(" ");
     }
+}
+
+void printlnHex(String str) {
+    printHex(str);
     Serial.println();
 }
 
@@ -43,9 +47,9 @@ void setup() {
     Serial.begin(115200);
     
     master.begin(MCLK, MI, MO);
-
     pinMode(MS, OUTPUT);
     digitalWrite(MS, HIGH);
+
     // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
     // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
     slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
@@ -57,7 +61,7 @@ void loop() {
         while (slave.getInputStream()->length()) 
             slave_msg += slave.read();
         Serial.print("slave input: ");
-        printHex(slave_msg);
+        printlnHex(slave_msg);
     }
 
     while (Serial.available()) {  // Serial has got data in 
@@ -67,25 +71,25 @@ void loop() {
     while (slave_msg.length() > 0) {  // Echo it back. Slave SPI output
         slave.write(slave_msg);
         Serial.print("slave output: ");
-        printHex(slave_msg);
+        printlnHex(slave_msg);
         slave_msg = "";
     }
 
     while (master_msg.length() > 0) {  // From serial to Master SPI
-        Serial.print("master output (serial-in): ");
-        Serial.println(master_msg);
-
-        digitalWrite(MS, LOW);
+        Serial.print("master output (cmd): ");
+        printHex(master_msg);
+        Serial.print(", input (return): ");
+        
         master.beginTransaction(spi_setting);
+        digitalWrite(MS, LOW);
         for (int i = 0; i < master_msg.length(); i++) {
             master_msg[i] = master.transfer(master_msg[i]);  // Return received data
             // master.transfer16(master_msg[i]);
-        }  
-        master.endTransaction();
+        }
         digitalWrite(MS, HIGH);
-
-        Serial.print("master input: ");
-        printHex(master_msg);
+        master.endTransaction();  
+        
+        printlnHex(master_msg);
         master_msg = "";
     }
 }

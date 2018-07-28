@@ -11,6 +11,7 @@
         "*.tpp": "cpp",
         "forward_list": "cpp",
         "slist": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "chrono": "cpp"
     }
 }

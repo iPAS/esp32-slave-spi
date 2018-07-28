@@ -27,8 +27,8 @@ SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
     delete[] SlaveSPIVector;     // Delete the old one
     SlaveSPIVector = temp;       // Point to the new one
 
-    input_stream  = "";
     output_stream = "";
+    input_stream  = "";
 }
 
 /**
@@ -40,12 +40,20 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
     max_buffer_size = buffer_size;  // should set to the minimum transaction length
     tx_buffer       = (byte *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
     rx_buffer       = (byte *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
+    
+    // for (int i = 0; i < max_buffer_size; i++) { tx_buffer[i] = 0; rx_buffer[i] = 0; }  // XXX: memset
     memset(tx_buffer, 0, max_buffer_size);
     memset(rx_buffer, 0, max_buffer_size);
-
+    
     /*
     Initialize the Slave-SPI module:
     */
+
+    // Configuration for the handshake line
+    // TODO:
+    // gpio_config_t io_conf = {.intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_OUTPUT, .pin_bit_mask = (1 << GPIO_HANDSHAKE)};
+    // gpio_config(&io_conf);
+
     spi_bus_config_t buscfg = {.mosi_io_num = si, .miso_io_num = so, .sclk_io_num = sclk};
     gpio_set_pull_mode(sclk, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(ss,   GPIO_PULLUP_ONLY);
@@ -64,10 +72,8 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
         .post_trans_cb = call_matcher_after_transmission  //< Called after a transaction is done
     };
 
-    if (esp_err_t err = spi_slave_initialize(spi_host, &buscfg, &slvcfg, SPI_DMA)) {  // Setup the SPI module
-        Serial.print(F("[SlaveSPI::begin] spi_slave_initialize err: "));
-        Serial.println(err);
-    }
+    esp_err_t err = spi_slave_initialize(spi_host, &buscfg, &slvcfg, SPI_DMA);  // Setup the SPI module
+    assert(err == ESP_OK);
 
     /*
     Prepare transaction queue:
@@ -99,14 +105,15 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
 }
 
 /**
- * Be called when the trans is set in the queue.
+ * Called after a transaction is queued and ready for pickup by master. 
  */
 void SlaveSPI::callbackAfterQueueing(spi_slave_transaction_t * trans) {  
-    // TODO: data ready -- trig hand-check pin
+    // TODO: data ready -- trig hand-check pin to high
+    // WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1<<GPIO_HANDSHAKE));
 }
 
 /**
- * Be called when the trans has finished. 
+ * Called after transaction is sent/received. 
  */
 void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {
     // Aggregate in-comming to input_stream
@@ -122,19 +129,26 @@ void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {
     initTransmissionQueue();  // Prepare the out-going queue and initialize the transmission configuration
 
     int ret = callback_after_transmission();  // Callback to user function hook
+
+    // TODO: transmission succeed -- trig hand-check pin to low
+    // WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1<<GPIO_HANDSHAKE));
 }
 
 void SlaveSPI::initTransmissionQueue() {
     // Prepare out-going data for next request by the master
+    // int i = 0;
+    // for (; i < max_buffer_size && i < output_stream.length(); i++) {  // NOT over buffer size
+    //     ((char *)transaction->tx_buffer)[i] = output_stream[i];       // Copy prepared data to out-going queue
+    // }
+    // output_stream = &(output_stream[i]);  // Segmentation. The remain is left for future.
+
     int size = min(max_buffer_size, output_stream.length());              // NOT over the buffer's size
     memcpy((void *)transaction->tx_buffer, output_stream.c_str(), size);  // Rearrange the tx data
     output_stream.remove(0, size);                                        // Segmentation. Remain for future.
 
     // Queue. Ready for sending if receiving
-    if (esp_err_t err = spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY)) {
-        Serial.print(F("[SlaveSPI::begin] spi_slave_queue_trans err: "));
-        Serial.println(err);
-    }
+    esp_err_t err = spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY);
+    assert(err == ESP_OK);
 }
 
 /**
