@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.ipp": "cpp",
+        "ostream": "cpp",
+        "rope": "cpp",
+        "string_view": "cpp",
+        "thread": "cpp",
+        "system_error": "cpp",
+        "ratio": "cpp",
+        "array": "cpp",
+        "*.tpp": "cpp",
+        "forward_list": "cpp",
+        "slist": "cpp",
+        "initializer_list": "cpp",
+        "chrono": "cpp"
+    }
+}

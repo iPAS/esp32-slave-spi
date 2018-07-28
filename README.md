@@ -51,7 +51,8 @@ The connections are described:
 I also use the BusPirate for debugging.
 It is just an option, can be neglected.
 But, if you have one, 
-    [SPI-sniffer](http://dangerousprototypes.com/docs/Bus_Pirate_binary_SPI_sniffer_utility) 
+    [SPI-sniffer](
+    http://dangerousprototypes.com/docs/Bus_Pirate_binary_SPI_sniffer_utility) 
     article and the following BusPirate pinout maybe help:
 
 ![buspirate pinout](figure/buspirate.png)
@@ -60,3 +61,9 @@ But, if you have one,
 ## Note 
 
 * In case of Arduino IDE, please rename test.ino as your folder name.
+* You would see that the master cannot get the correct reponsed data.
+    The received response is __shifted left by one bit__. 
+    I am not sure why this is occured.
+    However, the SlaveSPI class works correctly.
+    * Update: the problem was fixed by the guide from [spi timing #1427](
+    https://github.com/espressif/arduino-esp32/issues/1427).

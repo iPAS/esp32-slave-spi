@@ -1,0 +1,7 @@
+{
+    "board": "espressif:esp32:lolin32",
+    "configuration": "FlashFreq=80,PartitionScheme=default,UploadSpeed=921600",
+    "port": "/dev/ttyUSB0",
+    "sketch": "test.ino",
+    "output": "../tmp/esp32-slave-spi"
+}

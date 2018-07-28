@@ -1,7 +1,26 @@
 /**
- * SlaveSPI Class from https://github.com/iPAS/esp32-slave-spi
+ * SlaveSPI Class
+ * - adopt from gist:shaielc/SlaveSPIClass.cpp at https://gist.github.com/shaielc/e0937d68978b03b2544474b641328145
  */
 #include "SlaveSPI.h"
+
+// ----------------------------------------------------------------------------
+/**
+ * XXX: quick_fix_spi_timing:
+ * 
+ * The recceived data from MISO are shifted by one bit in every byte. 
+ * Helped by https://github.com/espressif/arduino-esp32/issues/1427
+ */
+#include <soc/spi_struct.h>
+struct spi_struct_t {
+    spi_dev_t * dev;
+#if !CONFIG_DISABLE_HAL_LOCKS
+    xSemaphoreHandle lock;
+#endif
+    uint8_t num;
+};
+void quick_fix_spi_timing(spi_t * _spi) { _spi->dev->ctrl2.miso_delay_mode = 2; }
+// ----------------------------------------------------------------------------
 
 #include <SPI.h>
 
@@ -15,75 +34,95 @@
 #define SCLK (gpio_num_t)27
 #define SS   (gpio_num_t)34
 
-SPIClass master(VSPI);
-SPISettings spi_setting(100000, MSBFIRST, SPI_MODE);
+SPIClass master(VSPI);  // HSPI
+SPISettings spi_setting(1000000, MSBFIRST, SPI_MODE);
 
-SlaveSPI slave(HSPI_HOST);
+SlaveSPI slave(HSPI_HOST);  // VSPI_HOST
 
-static String txt = "";
-static String cmd = "";
+static String master_msg = "";
+static String slave_msg = "";
 
-void slave_tx_finish() {
+int callback_after_slave_tx_finish() {
     // Serial.println("[slave_tx_finish] slave transmission has been finished!");
     // Serial.println(slave[0]);
+
+    return 0;
 }
 
-void print_hex(String str) {
+/**
+ * Auxiliary
+ */ 
+void printHex(String str) {
     for (int i = 0; i < str.length(); i++) {
         Serial.print(str[i], HEX);
         Serial.print(" ");
     }
+}
+
+void printlnHex(String str) {
+    printHex(str);
     Serial.println();
 }
 
+/**
+ * Setup
+ */
 void setup() {
     Serial.begin(115200);
     
-    master.begin(MCLK, MI, MO);
-
+    // Setup Master-SPI
     pinMode(MS, OUTPUT);
     digitalWrite(MS, HIGH);
-    // slave.begin(SO, SI, SCLK, SS, 8, slave_tx_finish);  // seems to work with groups of 4 bytes
-    // slave.begin(SO, SI, SCLK, SS, 4, slave_tx_finish);
-    slave.begin(SO, SI, SCLK, SS, 2, slave_tx_finish);
-    // slave.begin(SO, SI, SCLK, SS, 1, slave_tx_finish);  // at least 2 word in an SPI frame
+    pinMode(MCLK, OUTPUT);
+    digitalWrite(MCLK, LOW);  // Due to SPI_MODE0
+    master.begin(MCLK, MI, MO);
+    
+    quick_fix_spi_timing(master.bus());  // XXX: https://github.com/espressif/arduino-esp32/issues/1427
+
+    // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
+    // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
+    slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
+    // slave.begin(SO, SI, SCLK, SS, 1, callback_after_slave_tx_finish);  // at least 2 word in an SPI frame
 }
 
+/**
+ * Loop 
+ */
 void loop() {
-    if (slave.getBuff()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
-        while (slave.getBuff()->length()) { 
-            txt += slave.read();
+    if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
+        while (slave.getInputStream()->length()) {
+            slave_msg += slave.read();
         }
         Serial.print("slave input: ");
-        print_hex(txt);
+        printlnHex(slave_msg);
     }
 
     while (Serial.available()) {  // Serial has got data in 
-        cmd += (char)Serial.read();
+        master_msg += (char)Serial.read();
     }
 
-    while (txt.length() > 0) {  // Slave SPI output
-        slave.trans_queue(txt);
+    while (slave_msg.length() > 0) {  // Echo it back. Slave SPI output
+        slave.write(slave_msg);
         Serial.print("slave output: ");
-        print_hex(txt);
-        txt = "";
+        printlnHex(slave_msg);
+        slave_msg = "";
     }
 
-    while (cmd.length() > 0) {  // From serial to Master SPI
-        Serial.print("serial input / master output: ");
-        Serial.println(cmd);
-
-        Serial.print("master input (whether read or write mode): ");
+    while (master_msg.length() > 0) {  // From serial to Master SPI
+        Serial.print("master output (cmd): ");
+        printHex(master_msg);
+        Serial.print(", input (return): ");
         
-        digitalWrite(MS, LOW);
         master.beginTransaction(spi_setting);
-        for (int i = 0; i < cmd.length(); i++) {
-            cmd[i] = master.transfer(cmd[i]);  // ERROR : gives the transmitted data <<1
+        digitalWrite(MS, LOW);
+        for (int i = 0; i < master_msg.length(); i++) {
+            master_msg[i] = master.transfer(master_msg[i]);  // Return received data
+            // master.transfer16(master_msg[i]);
         }
-        master.endTransaction();
         digitalWrite(MS, HIGH);
+        master.endTransaction();  
         
-        print_hex(cmd);
-        cmd = "";
+        printlnHex(master_msg);
+        master_msg = "";
     }
 }
