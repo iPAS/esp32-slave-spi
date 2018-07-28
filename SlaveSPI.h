@@ -1,13 +1,14 @@
 #ifndef SLAVE_SPI_CLASS
 #define SLAVE_SPI_CLASS
 
-#include "Arduino.h"
-#include "driver/spi_slave.h"
+#include <Arduino.h>
+#include <SPI.h>
+#include <driver/spi_slave.h>
 
 // #define GPIO_HANDSHAKE 
 
 #define SPI_QUEUE_SIZE 1
-#define SPI_MODE       0
+#define SPI_MODE       SPI_MODE0
 #define SPI_DMA        0  // XXX: Still fail of use DMA whether 1 or 2. Don't know why. 
 
 #define SPI_DEFAULT_MAX_BUFFER_SIZE 128

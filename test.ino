@@ -46,10 +46,13 @@ void printlnHex(String str) {
 void setup() {
     Serial.begin(115200);
     
-    master.begin(MCLK, MI, MO);
+    // Setup Master-SPI
     pinMode(MS, OUTPUT);
     digitalWrite(MS, HIGH);
-
+    pinMode(MCLK, OUTPUT);
+    digitalWrite(MCLK, LOW);  // Due to SPI_MODE0
+    master.begin(MCLK, MI, MO);
+    
     // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
     // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
     slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
@@ -58,8 +61,9 @@ void setup() {
 
 void loop() {
     if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
-        while (slave.getInputStream()->length()) 
+        while (slave.getInputStream()->length()) {
             slave_msg += slave.read();
+        }
         Serial.print("slave input: ");
         printlnHex(slave_msg);
     }

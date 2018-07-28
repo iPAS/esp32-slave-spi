@@ -60,3 +60,8 @@ But, if you have one,
 ## Note 
 
 * In case of Arduino IDE, please rename test.ino as your folder name.
+* You would see that the master cannot get the correct reponsed data.
+	The received response is __shifted left by one bit__. 
+	I am not sure why this is occured.
+	However, the SlaveSPI class works correctly.
+
