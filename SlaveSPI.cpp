@@ -34,7 +34,7 @@ SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
 /**
  * To initialize the Slave-SPI module.
  */ 
-void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss, size_t buffer_size, int (*callback)()) {
+esp_err_t SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss, size_t buffer_size, int (*callback)()) {
     callback_after_transmission = callback;
 
     max_buffer_size = buffer_size;  // should set to the minimum transaction length
@@ -73,7 +73,10 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
     };
 
     esp_err_t err = spi_slave_initialize(spi_host, &buscfg, &slvcfg, SPI_DMA);  // Setup the SPI module
-    assert(err == ESP_OK);
+    if (err != ESP_OK) {
+        DEBUG_PRINT(err);
+        return err;
+    }
 
     /*
     Prepare transaction queue:
@@ -101,7 +104,11 @@ void SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t s
         .user      = NULL                   //< User-defined variable. Can be used to store e.g. transaction ID.
     };
     
-    initTransmissionQueue();
+    err = initTransmissionQueue();
+    if (err != ESP_OK) {
+        DEBUG_PRINT(err);
+    }
+    return err;
 }
 
 /**
@@ -126,7 +133,11 @@ void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {
     transaction->trans_len = 0;     // Set zero on slave's actual received data.
     transaction->user      = NULL;  // XXX: reset?
 
-    initTransmissionQueue();  // Prepare the out-going queue and initialize the transmission configuration
+    esp_err_t err = initTransmissionQueue();  // Prepare the out-going queue and initialize the transmission configuration
+    if (err != ESP_OK) {
+        DEBUG_PRINT(err);
+        return;
+    }
 
     int ret = callback_after_transmission();  // Callback to user function hook
 
@@ -134,7 +145,7 @@ void SlaveSPI::callbackAfterTransmission(spi_slave_transaction_t * trans) {
     // WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1<<GPIO_HANDSHAKE));
 }
 
-void SlaveSPI::initTransmissionQueue() {
+esp_err_t SlaveSPI::initTransmissionQueue() {
     // Prepare out-going data for next request by the master
     // int i = 0;
     // for (; i < max_buffer_size && i < output_stream.length(); i++) {  // NOT over buffer size
@@ -147,8 +158,7 @@ void SlaveSPI::initTransmissionQueue() {
     output_stream.remove(0, size);                                        // Segmentation. Remain for future.
 
     // Queue. Ready for sending if receiving
-    esp_err_t err = spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY);
-    assert(err == ESP_OK);
+    return spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY);
 }
 
 /**

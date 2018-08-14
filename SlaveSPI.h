@@ -41,15 +41,15 @@ class SlaveSPI {
 
   public:
     SlaveSPI(spi_host_device_t spi_host = HSPI_HOST);  // HSPI, VSPI
-    void initTransmissionQueue();
+    esp_err_t initTransmissionQueue();
 
     void callbackAfterQueueing(spi_slave_transaction_t * trans);      // Called when the trans is set in the queue
     void callbackAfterTransmission(spi_slave_transaction_t * trans);  // Called when the trans has finished
 
     inline bool match(spi_slave_transaction_t * trans) { return (this->transaction == trans); };
 
-    void begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
-               size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
+    esp_err_t begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
+                    size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
 
     void write(String & msg);  // Queue data then wait for transmission
     String read();
@@ -77,4 +77,29 @@ struct spi_struct_t {
 
 void quick_fix_spi_timing(spi_t * _spi);
 
+
+/**
+ * Auxiliary:
+ */
+#if (0)
+#define DEBUG_PRINT(str)                \
+    Serial.print(F("["));               \
+    Serial.print(__FILE__);             \
+    Serial.print(F(" > "));             \
+    Serial.print(__PRETTY_FUNCTION__);  \
+    Serial.print(F(' @'));              \
+    Serial.print(__LINE__);             \
+    Serial.print(' : ');                \
+    Serial.println(str);
+#else
+#define DEBUG_PRINT(str) {       \
+    Serial.print(F("["));        \
+    Serial.print(__FUNCTION__);  \
+    Serial.print(F('@'));        \
+    Serial.print(__LINE__);      \
+    Serial.print(': ');          \
+    Serial.println(str); }
 #endif
+
+
+#endif  // #ifndef SLAVE_SPI_CLASS
