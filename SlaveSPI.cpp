@@ -169,3 +169,8 @@ byte SlaveSPI::readByte() {
     input_stream.remove(0, 1);
     return tmp;
 }
+
+/**
+ * Quick fix the SPI timeing problem that make received bits are shift left by one.
+ */
+void quick_fix_spi_timing(spi_t * _spi) { _spi->dev->ctrl2.miso_delay_mode = 2; }

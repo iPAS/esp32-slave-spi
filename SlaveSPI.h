@@ -59,4 +59,22 @@ class SlaveSPI {
     inline void     flushInputStream() { input_stream = ""; }
 };
 
+
+/**
+ * XXX: quick_fix_spi_timing:
+ * 
+ * The recceived data from MISO are shifted by one bit in every byte. 
+ * Helped by https://github.com/espressif/arduino-esp32/issues/1427
+ */
+#include <soc/spi_struct.h>
+struct spi_struct_t {
+    spi_dev_t * dev;
+#if !CONFIG_DISABLE_HAL_LOCKS
+    xSemaphoreHandle lock;
+#endif
+    uint8_t num;
+};
+
+void quick_fix_spi_timing(spi_t * _spi);
+
 #endif

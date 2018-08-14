@@ -5,23 +5,6 @@
 #include "SlaveSPI.h"
 
 // ----------------------------------------------------------------------------
-/**
- * XXX: quick_fix_spi_timing:
- * 
- * The recceived data from MISO are shifted by one bit in every byte. 
- * Helped by https://github.com/espressif/arduino-esp32/issues/1427
- */
-#include <soc/spi_struct.h>
-struct spi_struct_t {
-    spi_dev_t * dev;
-#if !CONFIG_DISABLE_HAL_LOCKS
-    xSemaphoreHandle lock;
-#endif
-    uint8_t num;
-};
-void quick_fix_spi_timing(spi_t * _spi) { _spi->dev->ctrl2.miso_delay_mode = 2; }
-// ----------------------------------------------------------------------------
-
 #include <SPI.h>
 
 #define MO   22
@@ -78,7 +61,8 @@ void setup() {
     master.begin(MCLK, MI, MO);
     
     quick_fix_spi_timing(master.bus());  // XXX: https://github.com/espressif/arduino-esp32/issues/1427
-
+    
+    // Setup Slave-SPI
     // slave.begin(SO, SI, SCLK, SS, 8, callback_after_slave_tx_finish);  // seems to work with groups of 4 bytes
     // slave.begin(SO, SI, SCLK, SS, 4, callback_after_slave_tx_finish);
     slave.begin(SO, SI, SCLK, SS, 2, callback_after_slave_tx_finish);
