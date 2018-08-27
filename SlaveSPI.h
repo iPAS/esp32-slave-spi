@@ -95,9 +95,9 @@ void quick_fix_spi_timing(spi_t * _spi);
 #define DEBUG_PRINT(str) {       \
     Serial.print(F("["));        \
     Serial.print(__FUNCTION__);  \
-    Serial.print(F('@'));        \
+    Serial.print(F("@"));        \
     Serial.print(__LINE__);      \
-    Serial.print(': ');          \
+    Serial.print(": ");          \
     Serial.println(str); }
 #endif
 
