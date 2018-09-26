@@ -31,8 +31,8 @@ class SlaveSPI {
 
     spi_host_device_t spi_host;  // HSPI, VSPI
 
-    byte * tx_buffer;
-    byte * rx_buffer;
+    uint8_t * tx_buffer;
+    uint8_t * rx_buffer;
 
     spi_slave_transaction_t * transaction;
     int (*callback_after_transmission)();  // Interrupt at the end of transmission,
@@ -53,7 +53,7 @@ class SlaveSPI {
 
     void write(String & msg);  // Queue data then wait for transmission
     String read();
-    byte readByte();
+    uint8_t readByte();
     
     inline String * getInputStream() { return &input_stream; }
     inline void     flushInputStream() { input_stream = ""; }

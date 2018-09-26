@@ -38,8 +38,8 @@ esp_err_t SlaveSPI::begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_nu
     callback_after_transmission = callback;
 
     max_buffer_size = buffer_size;  // should set to the minimum transaction length
-    tx_buffer       = (byte *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
-    rx_buffer       = (byte *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
+    tx_buffer       = (uint8_t *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
+    rx_buffer       = (uint8_t *)heap_caps_malloc(max(max_buffer_size, 32), SPI_MALLOC_CAP);
     
     // for (int i = 0; i < max_buffer_size; i++) { tx_buffer[i] = 0; rx_buffer[i] = 0; }  // XXX: memset
     memset(tx_buffer, 0, max_buffer_size);
@@ -174,8 +174,8 @@ String SlaveSPI::read() {
     return tmp;
 }
 
-byte SlaveSPI::readByte() {
-    byte tmp = input_stream[0];
+uint8_t SlaveSPI::readByte() {
+    uint8_t tmp = input_stream[0];
     input_stream.remove(0, 1);
     return tmp;
 }
