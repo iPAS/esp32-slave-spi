@@ -1,5 +1,5 @@
-#ifndef SLAVE_SPI_CLASS
-#define SLAVE_SPI_CLASS
+#ifndef __SLAVE_SPI_CLASS_H__
+#define __SLAVE_SPI_CLASS_H__
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -102,4 +102,4 @@ void quick_fix_spi_timing(spi_t * _spi);
 #endif
 
 
-#endif  // #ifndef SLAVE_SPI_CLASS
+#endif  // #ifndef __SLAVE_SPI_CLASS_H__
