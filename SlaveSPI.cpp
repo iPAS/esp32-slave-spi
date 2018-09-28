@@ -153,9 +153,9 @@ esp_err_t SlaveSPI::initTransmissionQueue() {
     // }
     // output_stream = &(output_stream[i]);  // Segmentation. The remain is left for future.
 
-    int size = min(max_buffer_size, output_stream.length());                      // NOT over the buffer's size.
-    memcpy((void *)transaction->tx_buffer, output_stream.bufferPointer(), size);  // Rearrange the tx data.
-    output_stream.remove(0, size);                                                // Segmentation. Remain for future.
+    int size = min(max_buffer_size, output_stream.length());                  // NOT over the buffer's size.
+    memcpy((void *)transaction->tx_buffer, output_stream.getBuffer(), size);  // Rearrange the tx data.
+    output_stream.remove(0, size);                                            // Segmentation. Remain for future.
 
     // Queue. Ready for sending if receiving
     return spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY);
