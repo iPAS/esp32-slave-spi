@@ -27,8 +27,8 @@ SlaveSPI::SlaveSPI(spi_host_device_t spi_host) {
     delete[] SlaveSPIVector;     // Delete the old one
     SlaveSPIVector = temp;       // Point to the new one
 
-    output_stream = "";
-    input_stream  = "";
+    output_stream.clear();
+    input_stream.clear();
 }
 
 /**
@@ -153,9 +153,9 @@ esp_err_t SlaveSPI::initTransmissionQueue() {
     // }
     // output_stream = &(output_stream[i]);  // Segmentation. The remain is left for future.
 
-    int size = min(max_buffer_size, output_stream.length());              // NOT over the buffer's size
-    memcpy((void *)transaction->tx_buffer, output_stream.c_str(), size);  // Rearrange the tx data
-    output_stream.remove(0, size);                                        // Segmentation. Remain for future.
+    int size = min(max_buffer_size, output_stream.length());                      // NOT over the buffer's size.
+    memcpy((void *)transaction->tx_buffer, output_stream.bufferPointer(), size);  // Rearrange the tx data.
+    output_stream.remove(0, size);                                                // Segmentation. Remain for future.
 
     // Queue. Ready for sending if receiving
     return spi_slave_queue_trans(spi_host, transaction, portMAX_DELAY);
@@ -164,14 +164,13 @@ esp_err_t SlaveSPI::initTransmissionQueue() {
 /**
  * To read/write SPI queue data.
  */ 
-void SlaveSPI::write(String & msg) {  // used to queue data to transmit
+void SlaveSPI::write(array_t & msg) {  // used to queue data to transmit
     output_stream += msg;
 }
 
-String SlaveSPI::read() {
-    String tmp = input_stream;
-    input_stream = "";
-    return tmp;
+void SlaveSPI::readToBuffer(array_t & buf) {  // move read data into buf
+    buf += input_stream;
+    input_stream.clear();
 }
 
 uint8_t SlaveSPI::readByte() {

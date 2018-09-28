@@ -16,6 +16,10 @@
 #define SPI_MALLOC_CAP (MALLOC_CAP_DMA | MALLOC_CAP_32BIT)
 // #define SPI_MALLOC_CAP (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT)
 
+#include "SimpleArray.h"
+typedef SimpleArray<uint8_t, int> array_t;
+
+
 class SlaveSPI {
 
     friend void call_matcher_after_queueing(spi_slave_transaction_t * trans);
@@ -24,15 +28,15 @@ class SlaveSPI {
   private:
     static SlaveSPI ** SlaveSPIVector;
     static int         vector_size;
+    
+    array_t input_stream  = array_t(SPI_DEFAULT_MAX_BUFFER_SIZE);  // Used to save incoming data
+    array_t output_stream = array_t(SPI_DEFAULT_MAX_BUFFER_SIZE);  // Used to buffer outgoing data
 
-    String input_stream;     // Used to save incoming data
-    String output_stream;    // Used to buffer outgoing data
     size_t max_buffer_size;  // Length of transaction buffer (maximum transmission size)
-
-    spi_host_device_t spi_host;  // HSPI, VSPI
-
     uint8_t * tx_buffer;
     uint8_t * rx_buffer;
+
+    spi_host_device_t spi_host;  // HSPI, VSPI
 
     spi_slave_transaction_t * transaction;
     int (*callback_after_transmission)();  // Interrupt at the end of transmission,
@@ -51,12 +55,12 @@ class SlaveSPI {
     esp_err_t begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
                     size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
 
-    void write(String & msg);  // Queue data then wait for transmission
-    String read();
+    void write(array_t & msg);  // Queue data then wait for transmission
+    void readToBuffer(array_t & buf);
     uint8_t readByte();
     
-    inline String * getInputStream() { return &input_stream; }
-    inline void     flushInputStream() { input_stream = ""; }
+    inline array_t * getInputStream() { return &input_stream; }
+    inline void      flushInputStream() { input_stream.clear(); }
 };
 
 
