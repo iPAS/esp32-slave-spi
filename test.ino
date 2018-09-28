@@ -81,7 +81,7 @@ void setup() {
 void loop() {
     if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
         while (slave.getInputStream()->length()) {
-            slave.readToBuffer(slave_msg);  // Not the sample read() as Serial
+            slave.readToArray(slave_msg);  // Not the sample read() as Serial
         }
         Serial.print("slave input: ");
         printlnHex(slave_msg);

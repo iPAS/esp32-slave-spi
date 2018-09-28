@@ -55,8 +55,8 @@ class SlaveSPI {
     esp_err_t begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
                     size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
 
-    void write(array_t & msg);  // Queue data then wait for transmission
-    void readToBuffer(array_t & buf);
+    void write(array_t & array);  // Queue data then wait for transmission
+    void readToArray(array_t & array);
     uint8_t readByte();
     
     inline array_t * getInputStream() { return &input_stream; }
@@ -73,9 +73,9 @@ class SlaveSPI {
 #include <soc/spi_struct.h>
 struct spi_struct_t {
     spi_dev_t * dev;
-#if !CONFIG_DISABLE_HAL_LOCKS
+    #if !CONFIG_DISABLE_HAL_LOCKS
     xSemaphoreHandle lock;
-#endif
+    #endif
     uint8_t num;
 };
 

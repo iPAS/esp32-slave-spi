@@ -164,12 +164,12 @@ esp_err_t SlaveSPI::initTransmissionQueue() {
 /**
  * To read/write SPI queue data.
  */ 
-void SlaveSPI::write(array_t & msg) {  // used to queue data to transmit
-    output_stream += msg;
+void SlaveSPI::write(array_t & array) {  // used to queue data to transmit
+    output_stream += array;
 }
 
-void SlaveSPI::readToBuffer(array_t & buf) {  // move read data into buf
-    buf += input_stream;
+void SlaveSPI::readToArray(array_t & array) {  // move read data into buf
+    array += input_stream;
     input_stream.clear();
 }
 
