@@ -57,6 +57,7 @@ class SlaveSPI {
 
     void write(array_t & array);  // Queue data then wait for transmission
     void readToArray(array_t & array);
+    int  readToBytes(void * buf, int size);
     uint8_t readByte();
     
     inline array_t * getInputStream() { return &input_stream; }

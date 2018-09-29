@@ -173,6 +173,12 @@ void SlaveSPI::readToArray(array_t & array) {  // move read data into buf
     input_stream.clear();
 }
 
+int SlaveSPI::readToBytes(void * buf, int size) {
+    int ret = input_stream.getBytes(buf, size);
+    input_stream.clear();
+    return ret;
+}
+
 uint8_t SlaveSPI::readByte() {
     uint8_t tmp = input_stream[0];
     input_stream.remove(0, 1);
