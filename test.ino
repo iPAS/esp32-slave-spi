@@ -3,8 +3,6 @@
  * - adopt from gist:shaielc/SlaveSPIClass.cpp at https://gist.github.com/shaielc/e0937d68978b03b2544474b641328145
  */
 #include "SlaveSPI.h"
-
-// ----------------------------------------------------------------------------
 #include <SPI.h>
 
 #define MO   22
@@ -17,13 +15,36 @@
 #define SCLK (gpio_num_t)27
 #define SS   (gpio_num_t)34
 
-SPIClass master(VSPI);  // HSPI
 SPISettings spi_setting(1000000, MSBFIRST, SPI_MODE);
-
+SPIClass master(VSPI);      // HSPI
 SlaveSPI slave(HSPI_HOST);  // VSPI_HOST
 
-static String master_msg = "";
-static String slave_msg = "";
+// ----------------------------------------------------------------------------
+#include "SimpleArray.h"
+typedef SimpleArray<uint8_t, int> array_t;
+
+array_t master_msg(SPI_DEFAULT_MAX_BUFFER_SIZE);
+array_t slave_msg(SPI_DEFAULT_MAX_BUFFER_SIZE);
+
+// ----------------------------------------------------------------------------
+void printHex(array_t arr);
+void printlnHex(array_t arr);
+
+
+/******************************************************************************
+ * Auxiliary
+ */
+void printHex(array_t arr) {
+    for (int i = 0; i < arr.length(); i++) {
+        Serial.print(arr[i], HEX);
+        Serial.print(" ");
+    }
+}
+
+void printlnHex(array_t arr) {
+    printHex(arr);
+    Serial.println();
+}
 
 int callback_after_slave_tx_finish() {
     // Serial.println("[slave_tx_finish] slave transmission has been finished!");
@@ -32,22 +53,7 @@ int callback_after_slave_tx_finish() {
     return 0;
 }
 
-/**
- * Auxiliary
- */ 
-void printHex(String str) {
-    for (int i = 0; i < str.length(); i++) {
-        Serial.print(str[i], HEX);
-        Serial.print(" ");
-    }
-}
-
-void printlnHex(String str) {
-    printHex(str);
-    Serial.println();
-}
-
-/**
+/******************************************************************************
  * Setup
  */
 void setup() {
@@ -69,13 +75,13 @@ void setup() {
     // slave.begin(SO, SI, SCLK, SS, 1, callback_after_slave_tx_finish);  // at least 2 word in an SPI frame
 }
 
-/**
+/******************************************************************************
  * Loop 
  */
 void loop() {
     if (slave.getInputStream()->length() && digitalRead(SS) == HIGH) {  // Slave SPI has got data in.
         while (slave.getInputStream()->length()) {
-            slave_msg += slave.read();
+            slave.readToArray(slave_msg);  // Not the sample read() as Serial
         }
         Serial.print("slave input: ");
         printlnHex(slave_msg);
@@ -89,7 +95,7 @@ void loop() {
         slave.write(slave_msg);
         Serial.print("slave output: ");
         printlnHex(slave_msg);
-        slave_msg = "";
+        slave_msg.clear();
     }
 
     while (master_msg.length() > 0) {  // From serial to Master SPI
@@ -107,6 +113,6 @@ void loop() {
         master.endTransaction();  
         
         printlnHex(master_msg);
-        master_msg = "";
+        master_msg.clear();
     }
 }

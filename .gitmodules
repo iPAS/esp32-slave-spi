@@ -1,0 +1,3 @@
+[submodule "simple-array"]
+	path = simple-array
+	url = https://github.com/iPAS/simple-array.git
