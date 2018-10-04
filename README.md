@@ -67,3 +67,9 @@ But, if you have one,
     However, the SlaveSPI class works correctly.
     * Update: the problem was fixed by the guide from [spi timing #1427](
     https://github.com/espressif/arduino-esp32/issues/1427).
+
+
+## Future Works
+
+* NEW found possible solution for [DMA buffer](
+https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/general-notes.html#dma-capable-requirement).
