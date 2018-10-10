@@ -1,3 +1,11 @@
+/**
+ * SlaveSPI
+ * 
+ *  Created on: Jul 1, 2018
+ *       Email: ipas.th@gmail.com
+ *      Author: ipas 
+ */
+
 #include "SlaveSPI.h"
 
 int         SlaveSPI::vector_size    = 0;
