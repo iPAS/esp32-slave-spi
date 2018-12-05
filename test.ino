@@ -92,7 +92,7 @@ void loop() {
     }
 
     while (slave_msg.length() > 0) {  // Echo it back. Slave SPI output
-        slave.write(slave_msg);
+        slave.writeFromArray(slave_msg);
         Serial.print("slave output: ");
         printlnHex(slave_msg);
         slave_msg.clear();

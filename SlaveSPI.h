@@ -55,7 +55,7 @@ class SlaveSPI {
     esp_err_t begin(gpio_num_t so, gpio_num_t si, gpio_num_t sclk, gpio_num_t ss,
                     size_t buffer_size = SPI_DEFAULT_MAX_BUFFER_SIZE, int (*callback)() = callbackDummy);
 
-    void write(array_t & array);  // Queue data then wait for transmission
+    void writeFromArray(array_t & array);  // Queue data then wait for transmission
     void readToArray(array_t & array);
     int  readToBytes(void * buf, int size);
     uint8_t readByte();
